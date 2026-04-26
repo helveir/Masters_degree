@@ -26,4 +26,4 @@ jobs:
           arduino-cli lib install "Adafruit SSD1306"
       
       - name: Compile sketch
-        run: arduino-cli compile --fqbn arduino:avr:nano Diplom.ino
+        run: arduino-cli compile --fqbn arduino:avr:nano Masters_degree.ino
