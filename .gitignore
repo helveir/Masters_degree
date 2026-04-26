@@ -1,0 +1,33 @@
+# Компилированные файлы Arduino
+*.ino.cpp
+*.ino.elf
+*.ino.hex
+*.ino.with_bootloader.hex
+*.ino.eep
+
+# Временные файлы
+*.tmp
+*.cache
+*.log
+*.dSYM/
+
+# Папки Arduino IDE
+build/
+.cache/
+.clang-format
+
+# Файлы настроек IDE (чужие настройки не нужны)
+.vscode/
+.idea/
+*.user
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Приватные данные (если есть)
+*.token
+*.pem
+*.key
+secrets.h
