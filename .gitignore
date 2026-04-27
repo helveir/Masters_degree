@@ -15,6 +15,7 @@
 build/
 .cache/
 .clang-format
+.pio/
 
 # Файлы настроек IDE (чужие настройки не нужны)
 .vscode/

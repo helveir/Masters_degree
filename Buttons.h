@@ -76,6 +76,10 @@ class Buttons {
     
     // Время начала удержания кнопки уменьшения
     unsigned long _lastDecreaseHold;
+
+    // Время последнего шага автоповтора для ровного изменения уставки
+    unsigned long _lastIncreaseRepeat;
+    unsigned long _lastDecreaseRepeat;
 };
 
 #endif

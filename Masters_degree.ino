@@ -127,7 +127,6 @@ void loop() {
         targetPressure++;
         if (targetPressure > 5) targetPressure = 5;
         display.update(currentPressure, targetPressure, systemState, feedActive, suctionActive);
-        delay(50);
     }
     
     // Удержание кнопки УМЕНЬШЕНИЕ (быстрая смена)
@@ -135,7 +134,6 @@ void loop() {
         targetPressure--;
         if (targetPressure < -5) targetPressure = -5;
         display.update(currentPressure, targetPressure, systemState, feedActive, suctionActive);
-        delay(50);
     }
     
     // ===== ЛОГИКА УПРАВЛЕНИЯ (ПОКА ИМИТАЦИЯ) =====
@@ -169,5 +167,4 @@ void loop() {
         }
     }
     
-    delay(10);  // Небольшая задержка для стабильности
 }

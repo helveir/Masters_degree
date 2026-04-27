@@ -39,6 +39,8 @@ void Buttons::begin(uint8_t decreasePin, uint8_t startPin, uint8_t increasePin) 
     // 0 означает "кнопка не удерживается"
     _lastIncreaseHold = 0;
     _lastDecreaseHold = 0;
+    _lastIncreaseRepeat = 0;
+    _lastDecreaseRepeat = 0;
 }
 
 // ============================================================================
@@ -136,33 +138,25 @@ bool Buttons::isDecreasePressed() {
 // Этот метод позволяет: нажал и держишь - значение меняется с ускорением
 // Сначала ничего не происходит HOLD_DELAY мс, затем каждые HOLD_INTERVAL мс
 bool Buttons::isIncreaseHeld() {
-    // Проверяем: кнопка нажата? (currentState == LOW)
     if (_btnIncrease.currentState == LOW) {
-        // Кнопка нажата. Проверяем, запущен ли таймер удержания
         if (_lastIncreaseHold == 0) {
-            // Таймер ещё не запущен. Запускаем его СЕЙЧАС.
             _lastIncreaseHold = millis();
+            _lastIncreaseRepeat = 0;
             return false;   // Первое нажатие не считаем автоповтором
         }
-        
-        // Вычисляем, сколько времени кнопка уже нажата
-        unsigned long holdTime = millis() - _lastIncreaseHold;
-        
-        // Если прошло больше HOLD_DELAY (400 мс)...
-        if (holdTime >= HOLD_DELAY) {
-            // Вычисляем, сколько прошло после начала автоповтора
-            unsigned long elapsed = holdTime - HOLD_DELAY;
-            
-            // ... и если мы наступили на очередной интервал HOLD_INTERVAL (100 мс)
-            // Оператор % - остаток от деления. Если остаток меньше 50 мс - срабатываем
-            // Это создаёт "окно" в 50 мс для срабатывания, чтобы не пропустить
-            if (elapsed % HOLD_INTERVAL < 50) {
-                return true;   // Да, это момент для автоповтора
-            }
+
+        unsigned long now = millis();
+        if (now - _lastIncreaseHold < HOLD_DELAY) {
+            return false;
+        }
+
+        if (_lastIncreaseRepeat == 0 || now - _lastIncreaseRepeat >= HOLD_INTERVAL) {
+            _lastIncreaseRepeat = now;
+            return true;
         }
     } else {
-        // Кнопка ОТПУЩЕНА! Сбрасываем таймер удержания
         _lastIncreaseHold = 0;
+        _lastIncreaseRepeat = 0;
     }
     return false;
 }
@@ -175,17 +169,22 @@ bool Buttons::isDecreaseHeld() {
     if (_btnDecrease.currentState == LOW) {
         if (_lastDecreaseHold == 0) {
             _lastDecreaseHold = millis();
+            _lastDecreaseRepeat = 0;
             return false;
         }
-        unsigned long holdTime = millis() - _lastDecreaseHold;
-        if (holdTime >= HOLD_DELAY) {
-            unsigned long elapsed = holdTime - HOLD_DELAY;
-            if (elapsed % HOLD_INTERVAL < 50) {
-                return true;
-            }
+
+        unsigned long now = millis();
+        if (now - _lastDecreaseHold < HOLD_DELAY) {
+            return false;
+        }
+
+        if (_lastDecreaseRepeat == 0 || now - _lastDecreaseRepeat >= HOLD_INTERVAL) {
+            _lastDecreaseRepeat = now;
+            return true;
         }
     } else {
         _lastDecreaseHold = 0;
+        _lastDecreaseRepeat = 0;
     }
     return false;
 }
