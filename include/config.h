@@ -46,6 +46,26 @@
 #define RELAY_SUCTION_PIN 11
 
 // ============================================================================
+// ДАТЧИК ДАВЛЕНИЯ И РАБОЧИЕ ПАРАМЕТРЫ
+// ============================================================================
+#define PRESSURE_SENSOR_PIN A0
+#define PRESSURE_SENSOR_SIMULATION true
+#define PRESSURE_SENSOR_RAW_MIN 0
+#define PRESSURE_SENSOR_RAW_MAX 1023
+#define PRESSURE_SENSOR_KPA_MIN -20
+#define PRESSURE_SENSOR_KPA_MAX 20
+
+#define TARGET_PRESSURE_MIN_KPA -5
+#define TARGET_PRESSURE_MAX_KPA 5
+#define DEFAULT_TARGET_PRESSURE_KPA 0
+#define PRESSURE_TOLERANCE_KPA 1
+#define PRESSURE_ALARM_MARGIN_KPA 2
+
+#define HOLD_DURATION_MS 5000UL
+#define MAX_REGULATION_TIME_MS 30000UL
+#define PRESSURE_SIMULATION_STEP_MS 100UL
+
+// ============================================================================
 // ЗАКРЫВАЕМ БЛОК #ifndef
 // ============================================================================
 // #endif - закрывает директиву, открытую в начале файла

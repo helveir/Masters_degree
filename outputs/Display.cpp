@@ -44,6 +44,8 @@ void Display::update(int pressure, int setpoint, int state,
         case 0: _display.print(F("IDLE")); break;    // Ожидание
         case 1: _display.print(F("WORK")); break;    // Работа
         case 2: _display.print(F("ALARM")); break;   // Авария
+        case 3: _display.print(F("HOLD")); break;    // Удержание
+        case 4: _display.print(F("DONE")); break;    // Завершено
         default: _display.print(F("ERR")); break;
     }
     
