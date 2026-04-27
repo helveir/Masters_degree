@@ -1,4 +1,4 @@
-name: Arduino Build
+name: PlatformIO Build
 
 on:
   push:
@@ -13,17 +13,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Setup Arduino CLI
-        uses: arduino/setup-arduino-cli@v2
-      
-      - name: Install AVR core
-        run: arduino-cli core install arduino:avr
-      
-      - name: Install libraries
-        run: |
-          arduino-cli lib install "Adafruit GFX Library"
-          arduino-cli lib install "Adafruit SSD1306"
-      
-      - name: Compile sketch
-        run: arduino-cli compile --fqbn arduino:avr:nano Masters_degree.ino
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Compile firmware
+        run: platformio run
+
+      - name: Run native tests
+        run: platformio test -e native
