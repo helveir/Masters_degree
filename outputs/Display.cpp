@@ -42,17 +42,18 @@ void Display::update(int pressure, int setpoint, int state,
     
     switch(state) {
         case 0: _display.print(F("IDLE")); break;    // Ожидание
-        case 1: _display.print(F("WORK")); break;    // Работа
+        case 1: _display.print(F("PUMP")); break;    // Накачка
         case 2: _display.print(F("ALARM")); break;   // Авария
-        case 3: _display.print(F("HOLD")); break;    // Удержание
-        case 4: _display.print(F("DONE")); break;    // Завершено
+        case 3: _display.print(F("SUCT")); break;    // Отсос
+        case 4: _display.print(F("ZERO")); break;    // Возврат к атмосфере
+        case 5: _display.print(F("DONE")); break;    // Завершено
         default: _display.print(F("ERR")); break;
     }
     
     // ===== СТРОКА 3: УСТАВКА ВНИЗУ =====
     _display.setTextSize(2);                    // Маленький шрифт для уставки
     _display.setCursor(10, 50);                 // В самом низу
-    _display.print(F("S:"));                    // Буква S (Setpoint)
+    _display.print(F("+/-"));                  // Симметричная граница
     _display.print(setpoint);                   // Значение уставки
     _display.print(F(" kPa"));
     

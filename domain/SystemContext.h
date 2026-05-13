@@ -10,10 +10,8 @@ struct SystemContext {
     ModeConfig mode = {};
     PressureSample pressure = {};
     ActuatorState actuators = {};
-    int targetPressureKpa = 0;
+    int pressureRangeKpa = 0;
     unsigned long stateStartedAtMs = 0;
-    unsigned long regulationStartedAtMs = 0;
-    unsigned long holdStartedAtMs = 0;
 
     void setState(SystemState nextState, unsigned long nowMs) {
         state = nextState;
@@ -23,31 +21,32 @@ struct SystemContext {
     void resetOutputs() {
         actuators.feedOn = false;
         actuators.suctionOn = false;
+        actuators.motorOn = false;
     }
 
     void resetFault() {
         fault = FaultCode::None;
     }
 
-    void startRun(unsigned long nowMs) {
+    void startPressurizing(unsigned long nowMs) {
         resetFault();
         resetOutputs();
-        setState(SystemState::Running, nowMs);
-        regulationStartedAtMs = nowMs;
-        holdStartedAtMs = 0;
+        setState(SystemState::Pressurizing, nowMs);
+    }
+
+    void startDepressurizing(unsigned long nowMs) {
+        resetOutputs();
+        setState(SystemState::Depressurizing, nowMs);
+    }
+
+    void startReturningToZero(unsigned long nowMs) {
+        resetOutputs();
+        setState(SystemState::ReturningToZero, nowMs);
     }
 
     void stop(unsigned long nowMs) {
         resetOutputs();
         setState(SystemState::Idle, nowMs);
-        holdStartedAtMs = 0;
-        regulationStartedAtMs = 0;
-    }
-
-    void startHolding(unsigned long nowMs) {
-        resetOutputs();
-        setState(SystemState::Holding, nowMs);
-        holdStartedAtMs = nowMs;
     }
 
     void complete(unsigned long nowMs) {

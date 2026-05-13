@@ -1,73 +1,37 @@
-// ============================================================================
-// ЗАЩИТА ОТ ДВОЙНОГО ВКЛЮЧЕНИЯ
-// ============================================================================
-// #ifndef - директива препроцессора, которая проверяет, не определено ли имя CONFIG_H
-// Если CONFIG_H еще не определен, то продолжаем
 #ifndef CONFIG_H
-
-// #define - создаёт макрос (константу) с именем CONFIG_H
-// Теперь при следующем включении этого файла #ifndef увидит, что CONFIG_H уже определен
-// и пропустит всё содержимое (предотвращает повторное объявление)
 #define CONFIG_H
 
-// ============================================================================
-// ПИНЫ ДЛЯ ЗУММЕРА
-// ============================================================================
-// #define BUZZER_PIN 3 - создаёт константу с именем BUZZER_PIN и значением 3
-// Компилятор везде, где встретит BUZZER_PIN, подставит число 3
-// Удобно: если надо сменить пин - меняем только здесь, не во всём коде
 #define BUZZER_PIN 3
 
-// ============================================================================
-// ПИНЫ ДЛЯ RGB СВЕТОДИОДА
-// ============================================================================
-// Красный канал RGB светодиода подключен к цифровому пину 2
 #define RGB_RED_PIN 2
-// Зелёный канал - к пину 7
 #define RGB_GREEN_PIN 7
-// Синий канал - к пину 8
 #define RGB_BLUE_PIN 8
 
-// ============================================================================
-// ПИНЫ ДЛЯ КНОПОК
-// ============================================================================
-// Все кнопки подключены к земле (GND) и используют внутреннюю подтяжку INPUT_PULLUP
-// При нажатии на пине будет LOW (0 вольт), при отпускании - HIGH (5 вольт)
-#define BTN_DECREASE_PIN 6   // Кнопка уменьшения уставки давления
-#define BTN_START_PIN 9      // Кнопка старт/стоп системы
-#define BTN_INCREASE_PIN 10  // Кнопка увеличения уставки давления
+#define BTN_DECREASE_PIN 6
+#define BTN_START_PIN 9
+#define BTN_INCREASE_PIN 10
 
-// ============================================================================
-// ПИНЫ ДЛЯ РЕЛЕ (управление клапанами)
-// ============================================================================
-// Реле подачи воздуха (повышает давление в системе) - пин 12
 #define RELAY_FEED_PIN 12
-// Реле отсоса воздуха (понижает давление) - пин 11
 #define RELAY_SUCTION_PIN 11
 
-// ============================================================================
-// ДАТЧИК ДАВЛЕНИЯ И РАБОЧИЕ ПАРАМЕТРЫ
-// ============================================================================
-#define PRESSURE_SENSOR_PIN A0
-#define PRESSURE_SENSOR_SIMULATION true
-#define PRESSURE_SENSOR_RAW_MIN 0
+#define MOTOR_IN1_PIN 4
+#define MOTOR_IN2_PIN 5
+
+#define PRESSURE_SENSOR_PIN A1
+#define PRESSURE_SENSOR_SIMULATION false
+#define PRESSURE_SENSOR_RAW_MIN 205
 #define PRESSURE_SENSOR_RAW_MAX 1023
-#define PRESSURE_SENSOR_KPA_MIN -20
-#define PRESSURE_SENSOR_KPA_MAX 20
+#define PRESSURE_SENSOR_RAW_TOLERANCE 25
+#define PRESSURE_SENSOR_KPA_MIN -100
+#define PRESSURE_SENSOR_KPA_MAX 100
 
-#define TARGET_PRESSURE_MIN_KPA -5
-#define TARGET_PRESSURE_MAX_KPA 5
-#define DEFAULT_TARGET_PRESSURE_KPA 0
+#define PRESSURE_RANGE_MIN_KPA 1
+#define PRESSURE_RANGE_MAX_KPA 100
+#define DEFAULT_PRESSURE_RANGE_KPA 5
 #define PRESSURE_TOLERANCE_KPA 1
-#define PRESSURE_ALARM_MARGIN_KPA 2
+#define PRESSURE_ALARM_MARGIN_KPA 5
 
-#define HOLD_DURATION_MS 5000UL
-#define MAX_REGULATION_TIME_MS 30000UL
+#define MAX_PHASE_TIME_MS 30000UL
 #define PRESSURE_SIMULATION_STEP_MS 100UL
 
-// ============================================================================
-// ЗАКРЫВАЕМ БЛОК #ifndef
-// ============================================================================
-// #endif - закрывает директиву, открытую в начале файла
-// Весь код между #ifndef и #endif будет включён только один раз
 #endif

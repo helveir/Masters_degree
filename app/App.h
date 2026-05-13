@@ -4,13 +4,14 @@
 #include "../control/PressureController.h"
 #include "../control/SafetyManager.h"
 #include "../domain/SystemContext.h"
+#include "../include/config.h"
 #include "../inputs/Buttons.h"
 #include "../inputs/PressureSensor.h"
 #include "../outputs/Buzzer.h"
 #include "../outputs/Display.h"
+#include "../outputs/MotorDriver.h"
 #include "../outputs/RGB_LED.h"
 #include "../outputs/Relay.h"
-#include "../include/config.h"
 
 class App {
   public:
@@ -22,6 +23,7 @@ class App {
     Buzzer _buzzer;
     RGB_LED _rgb;
     Relay _relay;
+    MotorDriver _motor;
     Display _display;
     PressureSensor _pressureSensor;
     SystemContext _context;
@@ -31,6 +33,7 @@ class App {
     void handleButtons(unsigned long nowMs);
     void updatePressure(unsigned long nowMs);
     void updateStateMachine(unsigned long nowMs);
+    int currentPhaseTargetKpa() const;
     void applyActuators(const ActuatorState& actuators);
     void render();
     void onStateChanged(SystemState previous, SystemState next);

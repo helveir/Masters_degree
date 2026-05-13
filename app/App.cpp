@@ -7,18 +7,27 @@ void App::begin() {
     _rgb.begin(RGB_RED_PIN, RGB_GREEN_PIN, RGB_BLUE_PIN);
     _buttons.begin(BTN_DECREASE_PIN, BTN_START_PIN, BTN_INCREASE_PIN);
     _relay.begin(RELAY_FEED_PIN, RELAY_SUCTION_PIN);
+    _motor.begin(MOTOR_IN1_PIN, MOTOR_IN2_PIN);
     _pressureSensor.begin(PRESSURE_SENSOR_PIN, PRESSURE_SENSOR_SIMULATION);
 
     configureDefaultMode();
 
-    if (! _display.begin()) {
+    if (!_display.begin()) {
         Serial.println("Display not found");
     }
 
-    _context.targetPressureKpa = _context.mode.defaultTargetKpa;
+    _context.pressureRangeKpa = _context.mode.defaultRangeKpa;
     _context.pressure = _pressureSensor.read();
-    _context.setState(SystemState::Idle, millis());
-    _rgb.setReady();
+
+    if (_context.pressure.valid) {
+        _context.setState(SystemState::Idle, millis());
+        _rgb.setReady();
+    } else {
+        _context.trip(FaultCode::SensorFault, millis());
+        _rgb.setAlarm();
+        _buzzer.alarmStart();
+    }
+
     render();
     Serial.println("System ready");
 }
@@ -36,30 +45,29 @@ void App::update() {
 }
 
 void App::configureDefaultMode() {
-    _context.mode.minTargetKpa = TARGET_PRESSURE_MIN_KPA;
-    _context.mode.maxTargetKpa = TARGET_PRESSURE_MAX_KPA;
-    _context.mode.defaultTargetKpa = DEFAULT_TARGET_PRESSURE_KPA;
+    _context.mode.minRangeKpa = PRESSURE_RANGE_MIN_KPA;
+    _context.mode.maxRangeKpa = PRESSURE_RANGE_MAX_KPA;
+    _context.mode.defaultRangeKpa = DEFAULT_PRESSURE_RANGE_KPA;
     _context.mode.toleranceKpa = PRESSURE_TOLERANCE_KPA;
     _context.mode.alarmMarginKpa = PRESSURE_ALARM_MARGIN_KPA;
-    _context.mode.holdDurationMs = HOLD_DURATION_MS;
-    _context.mode.maxRegulationTimeMs = MAX_REGULATION_TIME_MS;
+    _context.mode.maxPhaseTimeMs = MAX_PHASE_TIME_MS;
 }
 
 void App::handleButtons(unsigned long nowMs) {
-    const bool allowSetpointChange =
+    const bool allowRangeChange =
         _context.state == SystemState::Idle || _context.state == SystemState::Completed;
 
-    if (allowSetpointChange) {
+    if (allowRangeChange) {
         if (_buttons.isIncreasePressed() || _buttons.isIncreaseHeld()) {
-            if (_context.targetPressureKpa < _context.mode.maxTargetKpa) {
-                _context.targetPressureKpa++;
+            if (_context.pressureRangeKpa < _context.mode.maxRangeKpa) {
+                _context.pressureRangeKpa++;
                 _buzzer.beepShort();
             }
         }
 
         if (_buttons.isDecreasePressed() || _buttons.isDecreaseHeld()) {
-            if (_context.targetPressureKpa > _context.mode.minTargetKpa) {
-                _context.targetPressureKpa--;
+            if (_context.pressureRangeKpa > _context.mode.minRangeKpa) {
+                _context.pressureRangeKpa--;
                 _buzzer.beepShort();
             }
         }
@@ -69,7 +77,7 @@ void App::handleButtons(unsigned long nowMs) {
         const SystemState previous = _context.state;
 
         if (_context.state == SystemState::Idle || _context.state == SystemState::Completed) {
-            _context.startRun(nowMs);
+            _context.startPressurizing(nowMs);
             _completionNotified = false;
             _buzzer.beepShort();
         } else if (_context.state == SystemState::Alarm) {
@@ -109,7 +117,7 @@ void App::updateStateMachine(unsigned long nowMs) {
     safetyInput.mode = _context.mode;
     safetyInput.state = _context.state;
     safetyInput.nowMs = nowMs;
-    safetyInput.regulationStartedAtMs = _context.regulationStartedAtMs;
+    safetyInput.phaseStartedAtMs = _context.stateStartedAtMs;
     const FaultCode fault = SafetyManager::evaluate(safetyInput);
 
     if (fault != FaultCode::None) {
@@ -123,19 +131,34 @@ void App::updateStateMachine(unsigned long nowMs) {
 
     PressureControlInput controlInput;
     controlInput.currentPressureKpa = _context.pressure.pressureKpa;
-    controlInput.targetPressureKpa = _context.targetPressureKpa;
+    controlInput.targetPressureKpa = currentPhaseTargetKpa();
     controlInput.toleranceKpa = _context.mode.toleranceKpa;
-    controlInput.nowMs = nowMs;
-    controlInput.holdStartedAtMs = _context.holdStartedAtMs;
-    controlInput.holdDurationMs = _context.mode.holdDurationMs;
-    controlInput.holdStateActive = _context.state == SystemState::Holding;
+    controlInput.depressurizing =
+        _context.state == SystemState::Depressurizing ||
+        _context.state == SystemState::ReturningToZero;
     const PressureControlResult result = PressureController::compute(controlInput);
 
-    if (_context.state == SystemState::Running && result.pressureStable) {
+    if (_context.state == SystemState::Pressurizing && result.targetReached) {
         const SystemState previous = _context.state;
-        _context.startHolding(nowMs);
+        _context.startDepressurizing(nowMs);
+        _buzzer.beepShort();
         onStateChanged(previous, _context.state);
-    } else if (_context.state == SystemState::Holding && result.holdComplete) {
+        ActuatorState switchedActuators;
+        applyActuators(switchedActuators);
+        return;
+    }
+
+    if (_context.state == SystemState::Depressurizing && result.targetReached) {
+        const SystemState previous = _context.state;
+        _context.startReturningToZero(nowMs);
+        _buzzer.beepShort();
+        onStateChanged(previous, _context.state);
+        ActuatorState switchedActuators;
+        applyActuators(switchedActuators);
+        return;
+    }
+
+    if (_context.state == SystemState::ReturningToZero && result.targetReached) {
         const SystemState previous = _context.state;
         _context.complete(nowMs);
         onStateChanged(previous, _context.state);
@@ -147,22 +170,36 @@ void App::updateStateMachine(unsigned long nowMs) {
     applyActuators(result.actuators);
 }
 
+int App::currentPhaseTargetKpa() const {
+    if (_context.state == SystemState::Depressurizing) {
+        return -_context.pressureRangeKpa;
+    }
+
+    if (_context.state == SystemState::ReturningToZero) {
+        return 0;
+    }
+
+    return _context.pressureRangeKpa;
+}
+
 void App::applyActuators(const ActuatorState& actuators) {
     _context.actuators = actuators;
 
     if (actuators.feedOn) {
         _relay.feedOn();
         _relay.suctionOff();
-        return;
-    }
-
-    if (actuators.suctionOn) {
+    } else if (actuators.suctionOn) {
         _relay.feedOff();
         _relay.suctionOn();
-        return;
+    } else {
+        _relay.bothOff();
     }
 
-    _relay.bothOff();
+    if (actuators.motorOn) {
+        _motor.forwardOn();
+    } else {
+        _motor.stop();
+    }
 }
 
 void App::render() {
@@ -171,8 +208,9 @@ void App::render() {
         case SystemState::Completed:
             _rgb.setReady();
             break;
-        case SystemState::Running:
-        case SystemState::Holding:
+        case SystemState::Pressurizing:
+        case SystemState::Depressurizing:
+        case SystemState::ReturningToZero:
             _rgb.setWorking();
             break;
         case SystemState::Alarm:
@@ -181,7 +219,7 @@ void App::render() {
     }
 
     _display.update(_context.pressure.pressureKpa,
-                    _context.targetPressureKpa,
+                    _context.pressureRangeKpa,
                     static_cast<int>(_context.state),
                     _context.actuators.feedOn,
                     _context.actuators.suctionOn);
@@ -202,8 +240,13 @@ void App::onStateChanged(SystemState previous, SystemState next) {
         _buzzer.alarmStop();
     }
 
-    if (next == SystemState::Holding) {
-        Serial.println("HOLD");
+    if (next == SystemState::Depressurizing) {
+        Serial.println("SUCTION");
+        return;
+    }
+
+    if (next == SystemState::ReturningToZero) {
+        Serial.println("ZERO");
         return;
     }
 
@@ -214,8 +257,8 @@ void App::onStateChanged(SystemState previous, SystemState next) {
         return;
     }
 
-    if (next == SystemState::Running) {
-        Serial.println("RUN");
+    if (next == SystemState::Pressurizing) {
+        Serial.println("PRESSURE");
         return;
     }
 

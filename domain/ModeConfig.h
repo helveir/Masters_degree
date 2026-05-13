@@ -2,13 +2,12 @@
 #define DOMAIN_MODE_CONFIG_H
 
 struct ModeConfig {
-    int minTargetKpa;
-    int maxTargetKpa;
-    int defaultTargetKpa;
+    int minRangeKpa;
+    int maxRangeKpa;
+    int defaultRangeKpa;
     int toleranceKpa;
     int alarmMarginKpa;
-    unsigned long holdDurationMs;
-    unsigned long maxRegulationTimeMs;
+    unsigned long maxPhaseTimeMs;
 };
 
 #endif

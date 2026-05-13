@@ -9,7 +9,7 @@ struct SafetyInput {
     ModeConfig mode = {};
     SystemState state = SystemState::Idle;
     unsigned long nowMs = 0;
-    unsigned long regulationStartedAtMs = 0;
+    unsigned long phaseStartedAtMs = 0;
 };
 
 class SafetyManager {
@@ -19,16 +19,18 @@ class SafetyManager {
             return FaultCode::SensorFault;
         }
 
-        const int minAllowed = input.mode.minTargetKpa - input.mode.alarmMarginKpa;
-        const int maxAllowed = input.mode.maxTargetKpa + input.mode.alarmMarginKpa;
+        const int minAllowed = -input.mode.maxRangeKpa - input.mode.alarmMarginKpa;
+        const int maxAllowed = input.mode.maxRangeKpa + input.mode.alarmMarginKpa;
 
         if (input.sample.pressureKpa < minAllowed ||
             input.sample.pressureKpa > maxAllowed) {
             return FaultCode::PressureOutOfRange;
         }
 
-        if (input.state == SystemState::Running &&
-            input.nowMs - input.regulationStartedAtMs > input.mode.maxRegulationTimeMs) {
+        if ((input.state == SystemState::Pressurizing ||
+             input.state == SystemState::Depressurizing ||
+             input.state == SystemState::ReturningToZero) &&
+            input.nowMs - input.phaseStartedAtMs > input.mode.maxPhaseTimeMs) {
             return FaultCode::RegulationTimeout;
         }
 

@@ -5,10 +5,11 @@
 
 enum class SystemState : uint8_t {
     Idle = 0,
-    Running = 1,
+    Pressurizing = 1,
     Alarm = 2,
-    Holding = 3,
-    Completed = 4
+    Depressurizing = 3,
+    ReturningToZero = 4,
+    Completed = 5
 };
 
 enum class FaultCode : uint8_t {
@@ -26,6 +27,7 @@ struct PressureSample {
 struct ActuatorState {
     bool feedOn = false;
     bool suctionOn = false;
+    bool motorOn = false;
 };
 
 #endif

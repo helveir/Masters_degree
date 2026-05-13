@@ -5,7 +5,7 @@
 void PressureSensor::begin(uint8_t pin, bool simulationEnabled) {
     _pin = pin;
     _simulationEnabled = simulationEnabled;
-    _simulatedPressureKpa = DEFAULT_TARGET_PRESSURE_KPA;
+    _simulatedPressureKpa = 0;
     _lastSimulationStepMs = 0;
 
     if (!_simulationEnabled) {
@@ -22,14 +22,21 @@ PressureSample PressureSensor::read() {
     }
 
     const int raw = analogRead(_pin);
-    const long mapped = map(raw,
-                            PRESSURE_SENSOR_RAW_MIN,
-                            PRESSURE_SENSOR_RAW_MAX,
-                            PRESSURE_SENSOR_KPA_MIN,
-                            PRESSURE_SENSOR_KPA_MAX);
-
     PressureSample sample;
-    sample.pressureKpa = static_cast<int>(mapped);
+
+    if (raw < PRESSURE_SENSOR_RAW_MIN - PRESSURE_SENSOR_RAW_TOLERANCE ||
+        raw > PRESSURE_SENSOR_RAW_MAX + PRESSURE_SENSOR_RAW_TOLERANCE) {
+        sample.pressureKpa = 0;
+        sample.valid = false;
+        return sample;
+    }
+
+    const int clampedRaw = constrain(raw, PRESSURE_SENSOR_RAW_MIN, PRESSURE_SENSOR_RAW_MAX);
+    sample.pressureKpa = static_cast<int>(map(clampedRaw,
+                                              PRESSURE_SENSOR_RAW_MIN,
+                                              PRESSURE_SENSOR_RAW_MAX,
+                                              PRESSURE_SENSOR_KPA_MIN,
+                                              PRESSURE_SENSOR_KPA_MAX));
     sample.valid = true;
     return sample;
 }

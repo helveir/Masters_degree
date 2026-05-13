@@ -12,7 +12,7 @@ class PressureSensor {
     void setSimulatedPressure(int pressureKpa);
 
   private:
-    uint8_t _pin = A0;
+    uint8_t _pin = A1;
     bool _simulationEnabled = false;
     int _simulatedPressureKpa = 0;
     unsigned long _lastSimulationStepMs = 0;
